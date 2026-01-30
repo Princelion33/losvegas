@@ -133,14 +133,14 @@ tr:hover { background: #1a1a1a; }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
 /* =========================================
-   CHECKBOX CUSTOM (Manquant)
+   CHECKBOX CUSTOM (C'est ce qui manquait !)
    ========================================= */
 .checkbox-wrapper { 
     display: flex; 
     align-items: center; 
     height: 100%; 
     padding-top: 0; 
-    margin-top: 28px; /* Aligne la case avec les autres champs */
+    margin-top: 28px; /* Aligne parfaitement avec les autres champs */
 }
 
 .custom-checkbox {
@@ -148,15 +148,15 @@ tr:hover { background: #1a1a1a; }
     align-items: center; 
     cursor: pointer; 
     user-select: none;
-    gap: 10px;
+    gap: 10px; /* Espace propre entre la case et le texte */
 }
 
-.custom-checkbox input { display: none; } /* Cache la vraie case moche */
+.custom-checkbox input { display: none; } /* Cache la case moche par défaut */
 
 .checkmark {
     width: 24px; 
     height: 24px; 
-    border: 2px solid #333; 
+    border: 2px solid #555; 
     border-radius: 6px; 
     display: flex; 
     align-items: center; 
@@ -166,7 +166,7 @@ tr:hover { background: #1a1a1a; }
     flex-shrink: 0; 
 }
 
-/* Quand c'est coché */
+/* Effet quand c'est coché */
 .custom-checkbox input:checked + .checkmark { 
     background: #00aaff; 
     border-color: #00aaff; 
@@ -174,7 +174,7 @@ tr:hover { background: #1a1a1a; }
 
 /* La petite coche blanche */
 .checkmark::after { 
-    content: '\f00c'; /* Code FontAwesome pour le "check" */
+    content: '\f00c'; /* Code icône "Check" */
     font-family: "Font Awesome 6 Free"; 
     font-weight: 900; 
     color: white; 
