@@ -70,7 +70,15 @@ if (isset($_GET['code'])) {
         'is_admin' => false
     ];
 
-    header('Location: absences.php');
+    // GESTION INTELLIGENTE DE LA REDIRECTION
+    if (isset($_SESSION['redirect_url'])) {
+        $url = $_SESSION['redirect_url'];
+        unset($_SESSION['redirect_url']); // On oublie l'URL après l'avoir utilisée
+        header("Location: $url");
+    } else {
+        // Par défaut, on va aux absences (si connexion directe)
+        header('Location: absences.php');
+    }
     exit();
 }
 

@@ -132,12 +132,13 @@ $catNames = [
                     </div>
                 </div>
 
-                <div style="margin-top:15px;">
-                    <label style="color:#aaa; cursor:pointer;">
-                        <input type="checkbox" name="is_available" <?= ($editMode && $memberToEdit['is_available']) ? 'checked' : '' ?>> 
-                        Marquer comme "Poste Vacant"
-                    </label>
-                </div>
+                <div class="checkbox-wrapper">
+    <label class="custom-checkbox">
+        <input type="checkbox" name="is_available" <?= ($editMode && $memberToEdit['is_available']) ? 'checked' : '' ?>>
+        <span class="checkmark"></span>
+        <span style="color:#aaa; font-size:0.95rem;">Marquer comme "Poste Vacant"</span>
+    </label>
+</div>
 
                 <button type="submit" class="btn-submit"><?= $editMode ? 'Modifier' : 'Ajouter au staff' ?></button>
                 <?php if($editMode): ?>

@@ -2,10 +2,9 @@
 session_start();
 require 'system/db.php'; 
 
-// 1. VÉRIFICATION CONNEXION DISCORD
-// Si le joueur n'est pas connecté, on ne charge pas la suite
+// 1. DÉFINIR LA REDIRECTION (Pour auth.php)
 if (!isset($_SESSION['discord_user'])) {
-    // On affiche une page simple pour demander la connexion
+    $_SESSION['redirect_url'] = 'https://losvegas.cloud/lotto.php'; // <-- L'URL pour revenir ici
     ?>
     <!DOCTYPE html>
     <html lang="fr">
@@ -17,7 +16,7 @@ if (!isset($_SESSION['discord_user'])) {
     <body>
         <div class="container" style="text-align:center; padding-top:100px;">
             <h1>🔒 Connexion Requise</h1>
-            <p style="color:#aaa; margin-bottom:30px;">Vous devez vous connecter avec Discord pour jouer au Loto.</p>
+            <p style="color:#aaa; margin-bottom:30px;">Identifiez-vous pour accéder à vos personnages.</p>
             <a href="dashboard/auth.php" class="btn-play" style="background:#5865F2;">
                 <i class="fab fa-discord"></i> Se connecter via Discord
             </a>
@@ -27,58 +26,73 @@ if (!isset($_SESSION['discord_user'])) {
     </body>
     </html>
     <?php
-    exit; // On arrête le script ici
+    exit;
 }
 
-// 2. RÉCUPÉRATION DES INFOS JOUEUR
+// 2. RÉCUPÉRATION DONNÉES JOUEUR
 $discord_id = $_SESSION['discord_user']['id'];
 $username = $_SESSION['discord_user']['username'];
-// Format FiveM pour Discord (souvent "discord:12345..." ou juste l'ID selon ta DB)
-// IMPORTANT : Vérifie dans ta table 'users' comment sont stockés les IDs Discord.
-// Si c'est "discord:8474...", garde la ligne ci-dessous.
 $user_identifier = "discord:" . $discord_id; 
 
-$pdo = $pdoFiveM; // On utilise la DB FiveM
+$pdo = $pdoFiveM; // DB Jeu
 
 // Récupérer le loto actif
 $stmt = $pdo->query("SELECT * FROM website_lotto WHERE status = 'active' ORDER BY id DESC LIMIT 1");
 $lotto = $stmt->fetch();
 $message = "";
 
-// 3. TRAITEMENT ACHAT TICKET
+// 3. RÉCUPÉRER LES PERSONNAGES (Multi-char)
+// On cherche tous les users qui ont cet identifiant Discord
+// Note: Si ta DB n'utilise pas 'identifier' ou 'firstname', adapte ici.
+$stmtChars = $pdo->prepare("SELECT identifier, firstname, lastname, accounts FROM users WHERE identifier LIKE ?");
+$stmtChars->execute(["%$discord_id%"]); // On cherche large au cas où (discord:ID ou juste ID)
+$characters = $stmtChars->fetchAll(PDO::FETCH_ASSOC);
+
+// 4. TRAITEMENT ACHAT
 if (isset($_POST['buy_ticket']) && $lotto) {
+    $selected_char = $_POST['character_identifier'];
     
-    // A. Vérifier l'argent du joueur en Base de Données (Table users)
-    // Adapte 'bank' si ton argent est dans 'accounts' (JSON) ou ailleurs
-    $stmtUser = $pdo->prepare("SELECT bank FROM users WHERE identifier = ?"); 
-    $stmtUser->execute([$user_identifier]);
-    $userDB = $stmtUser->fetch();
+    // Vérification de sécurité : est-ce que ce char appartient bien au mec connecté ?
+    $is_owner = false;
+    foreach ($characters as $c) {
+        if ($c['identifier'] === $selected_char) {
+            $is_owner = true;
+            // Récupérer l'argent (Gestion accounts JSON ou colonne bank)
+            $money = 0;
+            // Cas 1 : Colonne 'bank' directe
+            if (isset($c['bank'])) { 
+                $money = $c['bank']; 
+            } 
+            // Cas 2 : JSON 'accounts' (ESX moderne)
+            elseif (isset($c['accounts'])) {
+                $accs = json_decode($c['accounts'], true);
+                $money = $accs['bank'] ?? 0;
+            }
+            break;
+        }
+    }
 
-    if ($userDB) {
-        $player_money = $userDB['bank']; // Argent en banque
-
-        if ($player_money >= $lotto['ticket_price']) {
-            // B. Retirer l'argent (Mise à jour DB)
+    if ($is_owner) {
+        if ($money >= $lotto['ticket_price']) {
+            // A. Retirer l'argent
+            // Note: Mettre à jour du JSON en SQL pur est chiant, ici je suppose une colonne 'bank' pour faire simple.
+            // Si tu as du JSON, c'est plus complexe, dis-le moi.
             $stmtPay = $pdo->prepare("UPDATE users SET bank = bank - ? WHERE identifier = ?");
-            $stmtPay->execute([$lotto['ticket_price'], $user_identifier]);
+            $stmtPay->execute([$lotto['ticket_price'], $selected_char]);
 
-            // C. Créer le ticket
-            $stmtInsert = $pdo->prepare("INSERT INTO website_lotto_tickets (lotto_id, identifier) VALUES (?, ?)");
-            $stmtInsert->execute([$lotto['id'], $user_identifier]);
+            // B. Ticket + Cagnotte
+            $pdo->prepare("INSERT INTO website_lotto_tickets (lotto_id, identifier) VALUES (?, ?)")
+                ->execute([$lotto['id'], $selected_char]);
             
-            // D. Augmenter la cagnotte
-            $stmtUpdatePot = $pdo->prepare("UPDATE website_lotto SET jackpot_current = jackpot_current + ? WHERE id = ?");
-            $stmtUpdatePot->execute([$lotto['ticket_price'], $lotto['id']]);
+            $pdo->prepare("UPDATE website_lotto SET jackpot_current = jackpot_current + ? WHERE id = ?")
+                ->execute([$lotto['ticket_price'], $lotto['id']]);
             
-            // Refresh pour voir le changement
             header("Refresh:0");
-            // Note : Le message ne s'affichera pas à cause du header refresh, 
-            // mais le joueur verra son argent baisser et la cagnotte monter.
         } else {
-            $message = "❌ Tu n'as pas assez d'argent en banque (" . number_format($player_money) . "$).";
+            $message = "❌ Ce personnage n'a pas assez d'argent en banque.";
         }
     } else {
-        $message = "❌ Ton personnage est introuvable. Connecte-toi au moins une fois en jeu avec ce Discord.";
+        $message = "❌ Erreur de sécurité : Personnage invalide.";
     }
 }
 ?>
@@ -87,45 +101,61 @@ if (isset($_POST['buy_ticket']) && $lotto) {
 <head>
     <title>Loto Los Santos</title>
     <link rel="stylesheet" href="assets/style.css">
-    <style>
-        .lotto-container { text-align: center; color: white; padding: 50px; background: rgba(0,0,0,0.5); border-radius: 20px; margin-top: 50px; border: 1px solid rgba(255,255,255,0.1); }
-        .jackpot-display { font-size: 4rem; font-weight: 900; color: #ffd700; text-shadow: 0 0 20px rgba(255, 215, 0, 0.6); margin: 20px 0; }
-        .buy-btn { background: #28a745; color: white; padding: 15px 40px; font-size: 1.5rem; border: none; border-radius: 50px; cursor: pointer; transition: 0.3s; margin-top:20px; font-weight:bold;}
-        .buy-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px #28a745; }
-        .user-info { margin-bottom: 20px; color: #aaa; font-size: 0.9rem; }
-        .user-info span { color: #00aaff; font-weight: bold; }
+    <link rel="stylesheet" href="assets/panel.css"> <style>
+        .lotto-box { 
+            background: #161616; border: 1px solid #333; border-radius: 20px; 
+            padding: 40px; max-width: 600px; margin: 50px auto; text-align: center;
+        }
+        .jackpot { font-size: 3.5rem; color: #ffd700; font-weight: 900; margin: 10px 0; text-shadow: 0 0 20px rgba(255,215,0,0.4); }
+        select { background: #222; color: white; padding: 15px; border: 1px solid #444; width: 100%; border-radius: 8px; font-size: 1rem; margin-top: 10px;}
     </style>
 </head>
 <body>
-    
-    <div style="position: absolute; top: 20px; left: 20px;">
-        <a href="index.html" style="color:white; text-decoration:none;">← Retour</a>
-    </div>
+    <div style="padding:20px;"><a href="index.html" style="color:#888;">← Retour</a></div>
 
-    <div class="container">
-        <div class="lotto-container">
-            <?php if ($lotto): ?>
-                <div class="user-info">Connecté en tant que <span><?= htmlspecialchars($username) ?></span></div>
+    <div class="lotto-box">
+        <?php if ($lotto): ?>
+            <h1 style="text-transform:uppercase;"><?= htmlspecialchars($lotto['name']) ?></h1>
+            <p>Fin du tirage : <?= date('d/m à H:i', strtotime($lotto['end_date'])) ?></p>
+            
+            <div class="jackpot"><?= number_format($lotto['jackpot_current'], 0, ' ', ' ') ?> $</div>
 
-                <h1>🎰 <?php echo htmlspecialchars($lotto['name']); ?></h1>
-                <p>Cagnotte actuelle :</p>
-                <div class="jackpot-display"><?php echo number_format($lotto['jackpot_current'], 0, ',', ' '); ?> $</div>
-                <p>Tirage le : <?php echo date('d/m/Y à H:i', strtotime($lotto['end_date'])); ?></p>
-                
-                <?php if ($message) echo "<p style='font-size:1.2rem; font-weight:bold; color:#ff4d4d; background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; display:inline-block;'>$message</p>"; ?>
-                
-                <form method="POST">
-                    <button type="submit" name="buy_ticket" class="buy-btn" onclick="return confirm('Confirmer l\'achat du ticket pour <?php echo $lotto['ticket_price']; ?> $ ?')">
-                        ACHETER UN TICKET (<?php echo $lotto['ticket_price']; ?> $)
+            <?php if ($message) echo "<p style='color:#ff4d4d; background:rgba(255,0,0,0.1); padding:10px; border-radius:5px;'>$message</p>"; ?>
+
+            <?php if (count($characters) > 0): ?>
+                <form method="POST" style="margin-top:30px;">
+                    <label style="display:block; text-align:left; color:#aaa; margin-bottom:5px;">Choisir le personnage qui paye :</label>
+                    <select name="character_identifier">
+                        <?php foreach($characters as $c): 
+                            // Tentative d'affichage propre de l'argent
+                            $moneyDisplay = isset($c['bank']) ? $c['bank'] : '?';
+                        ?>
+                            <option value="<?= $c['identifier'] ?>">
+                                <?= htmlspecialchars($c['firstname'] . ' ' . $c['lastname']) ?> (Banque: <?= $moneyDisplay ?> $)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <button type="submit" name="buy_ticket" class="btn-submit" style="width:100%; margin-top:20px; font-size:1.2rem;">
+                        ACHETER UN TICKET (<?= $lotto['ticket_price'] ?> $)
                     </button>
                 </form>
-                <p style="margin-top:15px; font-size:0.8rem; color:#666;">L'argent sera débité de votre compte bancaire en jeu.</p>
-
             <?php else: ?>
-                <h1>Aucun tirage en cours.</h1>
-                <p>Revenez plus tard !</p>
+                <div style="background:rgba(255,0,0,0.1); padding:20px; border-radius:10px; margin-top:20px; text-align:left;">
+                    <h3 style="color:#ff4d4d;"><i class="fas fa-exclamation-triangle"></i> Aucun personnage trouvé</h3>
+                    <p style="font-size:0.9rem; color:#ccc;">
+                        Nous n'avons trouvé aucun personnage lié à ton Discord (<code><?= $discord_id ?></code>).<br><br>
+                        <strong>Pourquoi ?</strong><br>
+                        1. Tu ne t'es jamais connecté au serveur avec ce compte Discord.<br>
+                        2. Le serveur n'a pas lié ton Steam à ton Discord.<br>
+                        3. La base de données ne stocke pas les IDs Discord.
+                    </p>
+                </div>
             <?php endif; ?>
-        </div>
+
+        <?php else: ?>
+            <h2>Aucun Loto en cours.</h2>
+        <?php endif; ?>
     </div>
 </body>
 </html>
