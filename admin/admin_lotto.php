@@ -2,14 +2,19 @@
 session_start();
 require '../system/db.php'; 
 
-// Sécurité : Vérifier Admin
+// Sécurité
 if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
     header('Location: login.php');
     exit;
 }
 
-// Initialisation Variable de succès
 $msg = "";
+if (isset($_GET['success'])) {
+    $msg = "✅ Loto lancé avec succès !";
+}
+if (isset($_GET['stopped'])) {
+    $msg = "⏹️ Loto arrêté.";
+}
 
 // --- ACTIONS ---
 
@@ -21,17 +26,22 @@ if (isset($_POST['create_lotto'])) {
     $days = $_POST['days'];
     $end_date = date('Y-m-d H:i:s', strtotime("+$days days"));
 
-    // On utilise pdoFiveM car c'est lié à l'économie du jeu
     $stmt = $pdoFiveM->prepare("INSERT INTO website_lotto (name, ticket_price, jackpot_base, jackpot_current, end_date, status) VALUES (?, ?, ?, ?, ?, 'active')");
     $stmt->execute([$name, $price, $base_pot, $base_pot, $end_date]);
-    $msg = "✅ Loto lancé avec succès !";
+    
+    // ANTI-REFRESH : On redirige vers la même page pour nettoyer le formulaire
+    header("Location: admin_lotto.php?success=1");
+    exit;
 }
 
-// 2. CLÔTURER / TIRER AU SORT (Simplifié)
+// 2. ARRÊTER UN LOTO
 if (isset($_GET['stop'])) {
     $id = $_GET['stop'];
     $pdoFiveM->prepare("UPDATE website_lotto SET status='finished' WHERE id=?")->execute([$id]);
-    $msg = "⏹️ Loto arrêté.";
+    
+    // ANTI-REFRESH
+    header("Location: admin_lotto.php?stopped=1");
+    exit;
 }
 
 // Récupérer les Lotos
