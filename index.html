@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackWall FA - Serious RP</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="background-image"></div>
+    <div class="overlay"></div>
+
+    <div class="content-wrapper">
+        
+        <header>
+            <div id="server-status" class="server-status">
+                <span class="status-dot"></span> <span id="status-text">Chargement...</span>
+            </div>
+            
+            <h1 class="glitch" data-text="BLACKWALL FA">BLACKWALL FA</h1>
+            <p class="subtitle">L'expérience Roleplay Ultime • Serious RP • 48 Slots</p>
+            
+            <a href="#" id="join-btn" class="btn-play">
+                <i class="fas fa-play"></i> REJOINDRE LA VILLE
+            </a>
+        </header>
+
+        <div class="cards-container">
+            
+            <a href="staff.php" class="card">
+                <div class="card-icon">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <div class="card-content">
+                    <h2>Hiérarchie Staff</h2>
+                    <p>Découvrez l'équipe, les rôles et les postes disponibles.</p>
+                    <span class="link-arrow">Voir l'équipe <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </a>
+
+            <a href="https://shop.losvegas.cloud/" target="_blank" class="card shop-card">
+                <div class="card-icon">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="card-content">
+                    <h2>Boutique Officielle</h2>
+                    <p>Soutenez le serveur : Coins, VIP, Véhicules imports.</p>
+                    <span class="link-arrow">Accéder au Shop <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </a>
+
+            <a href="lotto.php" class="card">
+                <div class="card-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div class="card-content">
+                    <h2>Loto National</h2>
+                    <p>Achetez un ticket et tentez de gagner le jackpot.</p>
+                    <span class="link-arrow">Jouer maintenant <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </a>
+
+            <a href="https://discord.gg/blackwallfa" target="_blank" class="card discord-card">
+                <div class="card-icon">
+                    <i class="fab fa-discord"></i>
+                </div>
+                <div class="card-content">
+                    <h2>Discord</h2>
+                    <p>Rejoignez la communauté et suivez les annonces.</p>
+                    <span class="link-arrow">Rejoindre <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </a>
+
+        </div>
+
+        <footer>
+            <p>&copy; 2025 BlackWall FA. Tous droits réservés.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // --- CONFIGURATION ---
+            const serverCode = "3e5o9z"; 
+            // ---------------------
+
+            const statusDiv = document.getElementById("server-status");
+            const statusText = document.getElementById("status-text");
+            const joinBtn = document.getElementById("join-btn");
+
+            // 1. MISE À JOUR DU LIEN DU BOUTON
+            if (joinBtn) {
+                joinBtn.href = `fivem://connect/cfx.re/join/${serverCode}`;
+            }
+
+            // 2. RECUPERATION DU STATUT (API FiveM)
+            const apiUrl = `https://servers-frontend.fivem.net/api/servers/single/${serverCode}`;
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error("Erreur réseau");
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.Data) {
+                        const players = data.Data.clients;
+                        const maxPlayers = data.Data.sv_maxclients;
+                        
+                        statusDiv.classList.add("online");
+                        statusText.innerHTML = `En ligne &bull; ${players} / ${maxPlayers} Joueurs`;
+                    } else {
+                        throw new Error("Serveur hors ligne");
+                    }
+                })
+                .catch(error => {
+                    console.error("Impossible de récupérer le statut:", error);
+                    statusDiv.classList.add("offline");
+                    statusText.textContent = "Hors ligne";
+                });
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,133 @@
+/* =========================================
+   BASE & TYPOGRAPHIE (Ton Style Original)
+   ========================================= */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #0a0a0a;
+    color: #e0e0e0;
+    line-height: 1.6;
+    background-image: radial-gradient(circle at 10% 20%, rgba(0, 170, 255, 0.05) 0%, transparent 20%),
+                      radial-gradient(circle at 90% 80%, rgba(0, 170, 255, 0.05) 0%, transparent 20%);
+    min-height: 100vh;
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+/* =========================================
+   HEADER & TITRES
+   ========================================= */
+.header { text-align: center; margin-bottom: 60px; animation: fadeInDown 1s ease-out; }
+
+.header h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 3.5rem; font-weight: 700; letter-spacing: -1px;
+    margin-bottom: 10px; color: #fff; text-transform: uppercase;
+}
+.header h1 .accent { color: #00aaff; text-shadow: 0 0 20px rgba(0, 170, 255, 0.4); }
+
+.subtitle { font-size: 1.2rem; color: #888; font-weight: 300; }
+
+.section-title {
+    font-family: 'Montserrat', sans-serif; font-size: 2rem; color: #fff;
+    margin-bottom: 30px; padding-bottom: 10px;
+    border-bottom: 2px solid rgba(0, 170, 255, 0.3);
+    display: inline-block; padding-right: 20px;
+}
+.section-title i { margin-right: 10px; color: #00aaff; }
+
+/* =========================================
+   CARTES STAFF (Ton Design)
+   ========================================= */
+.staff-section { margin-bottom: 60px; animation: fadeInUp 1s ease-out; animation-fill-mode: both; }
+.staff-section:nth-child(2) { animation-delay: 0.2s; }
+.staff-section:nth-child(3) { animation-delay: 0.4s; }
+
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+
+.card {
+    background: #161616; border-radius: 12px; padding: 25px;
+    border: 1px solid #2a2a2a; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative; overflow: hidden;
+}
+.card::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+    background: linear-gradient(90deg, #00aaff, #0077b3); opacity: 0; transition: opacity 0.3s ease;
+}
+.card:hover { transform: translateY(-7px); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); background: #1a1a1a; border-color: #333; }
+.card:hover::before { opacity: 1; }
+
+.card-header { display: flex; align-items: center; margin-bottom: 20px; }
+.card-header i {
+    font-size: 1.5rem; margin-right: 15px; color: #00aaff;
+    background: rgba(0, 170, 255, 0.1); padding: 10px; border-radius: 50%;
+    width: 45px; height: 45px; display: flex; justify-content: center; align-items: center;
+}
+.card h3 { font-family: 'Montserrat', sans-serif; font-size: 1.3rem; color: #fff; font-weight: 600; }
+
+.card ul { list-style: none; }
+.card li {
+    font-size: 1.1rem; color: #ccc; margin-bottom: 8px; padding-left: 15px;
+    border-left: 3px solid #333; transition: all 0.2s ease;
+}
+.card:hover li { border-left-color: #00aaff; color: #fff; padding-left: 20px; }
+.card li.disponible { color: #666; font-style: italic; border-left-color: #2a2a2a; }
+.card:hover li.disponible { border-left-color: #444; color: #888; padding-left: 15px; }
+
+/* =========================================
+   ELEMENTS ADMIN (Ajoutés pour admin.php & lotto)
+   ========================================= */
+/* Navbar Admin */
+.navbar {
+    background: rgba(22, 22, 22, 0.95); border-bottom: 1px solid #333;
+    padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
+}
+.brand { font-size: 1.5rem; font-weight: 700; color: white; }
+.brand span { color: #00aaff; }
+.nav-actions a { color: #888; text-decoration: none; margin-left: 20px; transition: 0.3s; }
+.nav-actions a:hover { color: white; }
+.btn-logout { color: #ff4d4d !important; }
+
+/* Formulaires Admin */
+.admin-card {
+    background: #161616; padding: 30px; border-radius: 12px; border: 1px solid #2a2a2a; margin-bottom: 30px;
+}
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+.input-group label { display: block; margin-bottom: 8px; color: #888; font-size: 0.9rem; }
+input, select {
+    width: 100%; background: #0f0f11; border: 1px solid #333; color: white;
+    padding: 12px; border-radius: 8px; outline: none; transition: 0.3s;
+}
+input:focus, select:focus { border-color: #00aaff; }
+
+/* Boutons */
+.btn-submit {
+    background: #00aaff; color: white; border: none; padding: 12px 30px; border-radius: 8px;
+    font-weight: bold; cursor: pointer; float: right; margin-top: 20px; transition: 0.3s;
+}
+.btn-submit:hover { background: #0088cc; transform: translateY(-2px); }
+
+/* Tableaux Admin */
+.table-container { border-radius: 12px; border: 1px solid #2a2a2a; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; background: #161616; }
+th { text-align: left; padding: 15px; background: #202020; color: #888; font-size: 0.8rem; text-transform: uppercase; }
+td { padding: 15px; border-bottom: 1px solid #2a2a2a; }
+tr:hover { background: #1a1a1a; }
+.priority-pill { background: #000; padding: 3px 8px; border-radius: 4px; color: #00aaff; border: 1px solid #333; font-family: monospace; }
+.badge { padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+.badge-online { background: rgba(0, 255, 0, 0.1); color: #4ade80; }
+.badge-vacant { background: rgba(255, 0, 0, 0.1); color: #ff4d4d; }
+
+/* Actions */
+.btn-icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; margin-left: 5px; text-decoration: none; }
+.btn-edit { background: rgba(0, 170, 255, 0.1); color: #00aaff; }
+.btn-del { background: rgba(255, 0, 0, 0.1); color: #ff4d4d; }
+
+/* Footer */
+.footer { text-align: center; margin-top: 80px; padding-top: 20px; border-top: 1px solid #222; color: #555; font-size: 0.9rem; }
+
+/* Animations */
+@keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
